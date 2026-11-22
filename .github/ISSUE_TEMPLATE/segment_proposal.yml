@@ -1,0 +1,36 @@
+name: Segment proposal
+description: Propose a new status line segment
+labels: ["enhancement", "segment"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Segment name
+      description: Short id, for example `cost`.
+    validations:
+      required: true
+  - type: textarea
+    id: shows
+    attributes:
+      label: What it shows
+      description: Example output, with colors or thresholds if any.
+    validations:
+      required: true
+  - type: textarea
+    id: data-source
+    attributes:
+      label: Data source
+      description: Which field of Claude Code's stdin JSON, file or command provides the data? Is it documented?
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: Cost and failure modes
+      description: Does it run commands or read files? What happens when the data is missing?
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to implement this myself

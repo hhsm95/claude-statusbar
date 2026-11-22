@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+# npm Trusted Publishing (OIDC). The first publish (0.1.0) is done manually from the
+# maintainer's machine, because a trusted publisher can only be attached to an existing package.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - name: Tag must match package.json version
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME#v}" != "$PKG_VERSION" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match package.json version ${PKG_VERSION}" >&2
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - run: npm publish --provenance --access public

@@ -1,0 +1,49 @@
+name: Bug report
+description: Something renders wrong or a command fails
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: If possible, include the JSON piped to `claude-statusbar` with private values removed.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: claude-statusbar version
+      description: Output of `claude-statusbar --version`
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: Output of `node --version`
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: statusbar.json
+      description: Contents of your `statusbar.json`, if relevant.
+      render: json
