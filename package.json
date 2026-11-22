@@ -1,5 +1,5 @@
 {
-  "name": "claude-statusbar",
+  "name": "@hhsm95/claude-statusbar",
   "version": "0.1.0",
   "description": "A cross-platform status line for Claude Code: model, effort, git, quota windows and context.",
   "license": "MIT",

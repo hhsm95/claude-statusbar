@@ -17,7 +17,7 @@ Opus 5.5 │ high │ ◉ api-worker │ ⎇ feat/x ⌂ wt-a ↑2 │ 5h ▓▓�
 ## Install
 
 ```bash
-npm i -g claude-statusbar
+npm i -g @hhsm95/claude-statusbar
 claude-statusbar init
 ```
 
@@ -80,14 +80,14 @@ Settings live in `statusbar.json` inside Claude Code's config directory: `~/.cla
 
 ```bash
 claude-statusbar uninstall
-npm rm -g claude-statusbar
+npm rm -g @hhsm95/claude-statusbar
 ```
 
 `uninstall` restores the previous status line if `init` stored one, or removes the `statusLine` entry otherwise. If `statusLine` points to something else it does nothing. `statusbar.json` stays on disk.
 
 ## Windows notes
 
-- Install with `npm i -g claude-statusbar`; npm creates the `claude-statusbar` shims that Claude Code runs.
+- Install with `npm i -g @hhsm95/claude-statusbar`; npm creates the `claude-statusbar` shims that Claude Code runs.
 - The glyphs (`│ ▓ ░ ◉ ⎇ ⌂ ↑ ↺`) render in Windows Terminal. Legacy consoles may show boxes.
 - If `git` is not on your `PATH`, the git segment is hidden.
 
