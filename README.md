@@ -117,6 +117,8 @@ Several status line tools exist for Claude Code (for example `cc-statusbar` and 
 
 Contributions are welcome, especially new segments. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
+With [Task](https://taskfile.dev) installed, `task` lists shortcuts for the common commands: `task check` (lint, type-check and tests), `task setup` (build, link this checkout as the global `claude-statusbar` and run `init`) and `task unlink` (restore the previous status line and remove the link).
+
 ## License
 
 [MIT](LICENSE)
