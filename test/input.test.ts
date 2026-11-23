@@ -8,6 +8,7 @@ const FULL = JSON.stringify({
   session_id: "abc",
   workspace: { current_dir: "/work/repo" },
   cwd: "/other",
+  transcript_path: "/t/s.jsonl",
   context_window: {
     total_input_tokens: 150000,
     total_output_tokens: 13000,
@@ -27,6 +28,7 @@ describe("parseStatusInput", () => {
       effortLevel: "high",
       sessionId: "abc",
       currentDir: "/work/repo",
+      transcriptPath: "/t/s.jsonl",
       context: { inputTokens: 150000, outputTokens: 13000, size: 200000, usedPct: 42 },
       fiveHour: { usedPct: 74, resetsAt: 1700000000 },
       sevenDay: { usedPct: 12.5, resetsAt: 1700500000 },
@@ -92,5 +94,14 @@ describe("parseStatusInput", () => {
       parseStatusInput(JSON.stringify({ workspace: { current_dir: 3 }, cwd: "/c" })).currentDir,
       "/c",
     );
+  });
+
+  test("reads transcript_path, treating non-strings and empty strings as missing", () => {
+    const path = "/home/u/.claude/projects/p/s.jsonl";
+    assert.equal(parseStatusInput(JSON.stringify({ transcript_path: path })).transcriptPath, path);
+    for (const value of [undefined, "", 7, {}]) {
+      const raw = JSON.stringify({ transcript_path: value });
+      assert.equal(parseStatusInput(raw).transcriptPath, undefined, raw);
+    }
   });
 });
