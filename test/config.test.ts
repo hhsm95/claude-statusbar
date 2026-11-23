@@ -58,6 +58,12 @@ describe("loadConfig", () => {
     assert.equal(config.segments.model, true);
   });
 
+  test("cache segment can be toggled and defaults to enabled", () => {
+    assert.equal(loadConfig(dir).segments.cache, true);
+    write('{"segments":{"cache":false}}');
+    assert.equal(loadConfig(dir).segments.cache, false);
+  });
+
   test("unknown ids are ignored and non-boolean toggles count as missing", () => {
     write('{"segments":{"weather":true,"model":false,"effort":"no","context":0}}');
     const config = loadConfig(dir);

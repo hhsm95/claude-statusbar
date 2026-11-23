@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `cache` segment: warns before the prompt cache expires from inactivity (`⏱ cache <n>m`) and,
+  once expired, shows how many tokens the next message will re-write (`⚠ cache expired · <n> tok`).
+  It detects the 1-hour or 5-minute cache lifetime from the session transcript.
+- The `session` segment shows the session start time: `◉ <name> · HH:MM`.
+
 ## [0.1.2] - 2026-11-22
 
 ### Fixed

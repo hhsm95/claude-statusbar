@@ -43,16 +43,19 @@ Segments are always printed in this order, joined by a dim ` │ `. A segment wi
 |---|---|---|
 | `model` | Model display name, e.g. `Opus 5.5` | bold |
 | `effort` | Effort level, e.g. `high` | dim gray |
-| `session` | `◉ <session name>` | dim |
+| `session` | `◉ <session name> · <start time>` | dim |
 | `git` | `⎇ <branch>` (short sha when HEAD is detached), `⌂ <folder>` for a linked worktree, `↑<n>` commits ahead of the base branch | branch light gray, worktree dim, ahead count green |
 | `fiveHour` | 5-hour quota window: `5h <bar> <pct>%` plus `↺<reset time>` | green below 70%, orange from 70%, red from 90% |
 | `sevenDay` | 7-day quota window, same format with label `7d` | same as above |
 | `context` | Tokens used over window size, e.g. `163K/200K`; `ctx <pct>%` when only a percentage is available | dim below 80%, orange from 80%, red from 90% |
+| `cache` | Prompt-cache expiry warning: `⏱ cache <n>m` before it expires, `⚠ cache expired · <tokens> tok` after. Hidden while the cache is warm | orange in the last 10 min (1h cache) or 2 min (5m cache), red once expired |
 
 Details:
 
 - The bar has 10 cells (`▓` filled, `░` empty). The printed percentage drives the color.
 - The reset time is `HH:MM` (local time) when less than 24 hours away, otherwise `DD Mon HH:MM` (for example `18 Nov 07:59`). An already expired window shows 0% and no reset mark.
+- The session start time uses the same format: `HH:MM` when the session started less than 24 hours ago, otherwise `DD Mon HH:MM`.
+- `cache` reads the end of the session transcript to find when the last request started and which cache lifetime it used: 1 hour on subscriptions, 5 minutes in usage overage or on some API-key setups. Every request restarts that lifetime, so only idle time makes the cache expire. The next message after expiry re-sends the whole context at the cache-write price, which is what the token count in the red state measures.
 - The git base branch is `origin/HEAD`'s target (preferring the local branch of the same name), else local `main`, else `master`, else the upstream branch. With no base there is no ahead count.
 
 ## Configuration
@@ -68,7 +71,8 @@ Settings live in `statusbar.json` inside Claude Code's config directory: `~/.cla
     "git": true,
     "fiveHour": true,
     "sevenDay": true,
-    "context": true
+    "context": true,
+    "cache": true
   }
 }
 ```

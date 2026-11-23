@@ -17,6 +17,7 @@ export interface StatusInput {
   effortLevel?: string;
   sessionId?: string;
   currentDir?: string;
+  transcriptPath?: string;
   context: ContextInput;
   fiveHour: WindowInput;
   sevenDay: WindowInput;
@@ -69,6 +70,7 @@ export function parseStatusInput(raw: string): StatusInput {
     effortLevel: str(root, ["effort", "level"]),
     sessionId: str(root, ["session_id"]),
     currentDir: str(root, ["workspace", "current_dir"]) ?? str(root, ["cwd"]),
+    transcriptPath: str(root, ["transcript_path"]),
     context: {
       inputTokens: num(root, ["context_window", "total_input_tokens"]),
       outputTokens: num(root, ["context_window", "total_output_tokens"]),

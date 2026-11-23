@@ -22,11 +22,35 @@ export const GLYPHS = {
   ahead: "↑",
   reset: "↺",
   session: "◉",
+  cacheWarn: "⏱",
+  cacheExpired: "⚠",
+  dot: "·",
   separator: "│",
 } as const;
 
 export const BAR_CELLS = 10;
 export const SECONDS_PER_DAY = 86400;
+export const SECONDS_PER_MINUTE = 60;
+export const MS_PER_SECOND = 1000;
+
+/** Prompt-cache TTLs used by the Claude API, in seconds. */
+export const CACHE_TTL_SECONDS = {
+  fiveMinutes: 300,
+  oneHour: 3600,
+} as const;
+
+/** How long before expiry the cache segment starts warning, per TTL (tuning values). */
+export const CACHE_WARN_SECONDS: Readonly<Record<number, number>> = {
+  [CACHE_TTL_SECONDS.fiveMinutes]: 120,
+  [CACHE_TTL_SECONDS.oneHour]: 600,
+};
+
+/** Transcript bytes read from the end; one retry with the larger size. */
+export const CACHE_TAIL_BYTES = 64 * 1024;
+export const CACHE_TAIL_BYTES_MAX = 1024 * 1024;
+
+/** `message.model` of transcript entries Claude Code writes for failed API calls. */
+export const SYNTHETIC_MODEL = "<synthetic>";
 
 export const WINDOW_LABELS = { fiveHour: "5h", sevenDay: "7d" } as const;
 
@@ -48,6 +72,11 @@ export const MONTHS = [
 export const STRINGS = {
   noData: "no data",
   contextPrefix: "ctx",
+  cache: "cache",
+  cacheExpired: "cache expired",
+  tokens: "tok",
+  minuteSuffix: "m",
+  underOneMinute: "<1m",
 } as const;
 
 export const CLI = {
@@ -121,6 +150,7 @@ export const SEGMENT_IDS = [
   "fiveHour",
   "sevenDay",
   "context",
+  "cache",
 ] as const;
 
 export const STATUS_LINE_DEFAULTS = {

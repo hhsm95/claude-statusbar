@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import { sessionSegment } from "../../src/segments/session.ts";
-import { fg, makeContext } from "../helpers.ts";
+import { fg, makeContext, NOW } from "../helpers.ts";
 
 let dir: string;
 beforeEach(() => {
@@ -38,6 +38,29 @@ describe("session segment", () => {
     put("b.json", JSON.stringify({ sessionId: "abc", name: "second" }));
     put("a.json", JSON.stringify({ sessionId: "abc", name: "first" }));
     assert.equal(sessionSegment.render(ctx()), fg(244, "◉ first"));
+  });
+
+  test("appends the start time when it was less than a day ago", () => {
+    const startedAt = NOW.getTime() - (2 * 3600 + 45 * 60) * 1000;
+    put("a.json", JSON.stringify({ sessionId: "abc", name: "api-worker", startedAt }));
+    assert.equal(sessionSegment.render(ctx()), fg(244, "◉ api-worker · 09:15"));
+  });
+
+  test("adds the date when the session started on an earlier day", () => {
+    const startedAt = Date.parse("2026-11-17T09:15:00Z");
+    put("a.json", JSON.stringify({ sessionId: "abc", name: "api-worker", startedAt }));
+    assert.equal(sessionSegment.render(ctx()), fg(244, "◉ api-worker · 17 Nov 09:15"));
+  });
+
+  test("exactly 24 hours ago already shows the date", () => {
+    const startedAt = NOW.getTime() - 24 * 3600 * 1000;
+    put("a.json", JSON.stringify({ sessionId: "abc", name: "api-worker", startedAt }));
+    assert.equal(sessionSegment.render(ctx()), fg(244, "◉ api-worker · 19 Nov 12:00"));
+  });
+
+  test("keeps only the name when startedAt is missing or not a number", () => {
+    put("a.json", JSON.stringify({ sessionId: "abc", name: "api-worker", startedAt: "9:15" }));
+    assert.equal(sessionSegment.render(ctx()), fg(244, "◉ api-worker"));
   });
 
   test("hidden when the match has no name", () => {

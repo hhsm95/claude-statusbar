@@ -1,3 +1,4 @@
+import { cacheSegment } from "./cache.ts";
 import { contextSegment } from "./context.ts";
 import { effortSegment } from "./effort.ts";
 import { fiveHourSegment } from "./five-hour.ts";
@@ -16,4 +17,5 @@ export const SEGMENTS: readonly Segment[] = [
   fiveHourSegment,
   sevenDaySegment,
   contextSegment,
+  cacheSegment,
 ];
