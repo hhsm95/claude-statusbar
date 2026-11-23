@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `claude-statusbar init` on Node.js older than 22.13 now exits with a message asking to update
+  Node.js, instead of failing with `The requested module 'node:util' does not provide an export
+  named 'styleText'`. `engines.node` is now `>=22.13`, the minimum `@inquirer/prompts` requires.
+
 ## [0.1.1] - 2026-11-22
 
 ### Changed

@@ -5,6 +5,7 @@ import { CLI, MAX_STDIN_BYTES, STRINGS } from "./constants.ts";
 import { createAnsi, isColorDisabled } from "./format/ansi.ts";
 import { runGit } from "./git.ts";
 import { parseStatusInput } from "./input.ts";
+import { meetsMinimumNode } from "./node-version.ts";
 import { render } from "./render.ts";
 
 async function readStdin(): Promise<string> {
@@ -64,6 +65,10 @@ async function main(args: readonly string[]): Promise<number> {
     return 0;
   }
   if (first === CLI.commands.init) {
+    if (!meetsMinimumNode(process.version, CLI.initMinNode)) {
+      io.err(`${CLI.nodeTooOld(process.version)}\n`);
+      return 1;
+    }
     const { runInit } = await import("./commands/init.ts");
     const options = { yes: rest.includes(CLI.yesFlag), interactive: process.stdin.isTTY === true };
     return runInit(process.env, options, io);
