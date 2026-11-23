@@ -14,7 +14,7 @@ Claude Code's settings SHALL be `<claudeDir>/settings.json`.
 
 ### Requirement: Segment toggles
 The config file SHALL be a JSON object with a `segments` object mapping segment ids (`model`,
-`effort`, `session`, `git`, `fiveHour`, `sevenDay`, `context`) to booleans. A segment set to
+`effort`, `session`, `git`, `fiveHour`, `sevenDay`, `context`, `cache`) to booleans. A segment set to
 `false` SHALL not be computed or printed. Missing ids SHALL default to `true`.
 
 #### Scenario: Git disabled
@@ -24,6 +24,10 @@ The config file SHALL be a JSON object with a `segments` object mapping segment 
 #### Scenario: Partial config
 - **WHEN** the config only contains `{"segments":{"effort":false}}`
 - **THEN** every segment except effort is enabled
+
+#### Scenario: Cache disabled
+- **WHEN** the config is `{"segments":{"cache":false}}`
+- **THEN** the transcript is not read and the cache segment is absent
 
 ### Requirement: Tolerant config loading
 A missing file, invalid JSON, a non-object root, unknown keys or non-boolean values SHALL NOT
