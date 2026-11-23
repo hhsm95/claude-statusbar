@@ -2,11 +2,11 @@
 
 A cross-platform status line for Claude Code: model, effort, session, git, quota windows and context usage, each one switchable.
 
+![claude-statusbar at the bottom of a Claude Code session: model, effort, session, 5h and 7d quota bars with reset times, and context usage](docs/images/screenshot.jpg)
+
 ```text
 Opus 5.5 │ high │ ◉ api-worker │ ⎇ feat/x ⌂ wt-a ↑2 │ 5h ▓▓▓▓▓▓▓░░░ 74% ↺16:59 │ 7d ▓▓░░░░░░░░ 21% ↺18 Nov 07:59 │ 163K/200K
 ```
-
-<!-- TODO: add a screenshot of the colored status line here. -->
 
 ## Requirements
 
@@ -36,6 +36,8 @@ Other commands: `claude-statusbar --help` / `-h` and `claude-statusbar --version
 ## Segments
 
 Segments are always printed in this order, joined by a dim ` │ `. A segment with no data is skipped.
+
+![Close-up of the status line: the 7-day window in orange at 89%](docs/images/statusbar.png)
 
 | id | What it shows | Colors / thresholds |
 |---|---|---|
