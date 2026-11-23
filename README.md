@@ -54,7 +54,7 @@ Details:
 
 - The bar has 10 cells (`▓` filled, `░` empty). The printed percentage drives the color.
 - The reset time is `HH:MM` (local time) when less than 24 hours away, otherwise `DD Mon HH:MM` (for example `18 Nov 07:59`). An already expired window shows 0% and no reset mark.
-- The session start time uses the same format: `HH:MM` when the session started less than 24 hours ago, otherwise `DD Mon HH:MM`.
+- The session start time uses the same format: `HH:MM` when the session started less than 24 hours ago, otherwise `DD Mon HH:MM`. It is when the current Claude Code process started (`startedAt` in Claude Code's session file), so resuming a session (`claude --resume` or `--continue`) resets it to the resume time. The prompt cache is not affected: it is keyed by the conversation content, not by the process, so a session resumed within the cache lifetime still hits the cache, and the `cache` segment keeps counting from the last request.
 - `cache` reads the end of the session transcript to find when the last request started and which cache lifetime it used: 1 hour on subscriptions, 5 minutes in usage overage or on some API-key setups. Every request restarts that lifetime, so only idle time makes the cache expire. The next message after expiry re-sends the whole context at the cache-write price, which is what the token count in the red state measures.
 - The git base branch is `origin/HEAD`'s target (preferring the local branch of the same name), else local `main`, else `master`, else the upstream branch. With no base there is no ahead count.
 

@@ -32,8 +32,8 @@ echo '{"model":{"display_name":"Opus 5.5"}}' | node dist/cli.js
    (`{ id, render(ctx) }`). `render` returns the text to print, or `null` when there is no data.
    Read everything from `ctx` (parsed input, `now`, `claudeDir`, color helpers, `runGit`) so tests
    can inject fakes instead of touching the real clock, home directory or git.
-2. Add the new id to the `SegmentId` union in `src/segments/types.ts` and to the default config
-   (all segments are enabled by default).
+2. Add the new id to `SEGMENT_IDS` in `src/constants.ts`. The `SegmentId` type and the default
+   config (every segment enabled) are both derived from that list.
 3. Register the segment in `src/segments/registry.ts`. The array order is the display order.
 4. Add `test/segments/<name>.test.ts` covering the data, missing-data and wrong-type cases.
 5. Add a row to the segment table in `README.md` and an entry to `CHANGELOG.md`.
