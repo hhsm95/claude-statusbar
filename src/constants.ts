@@ -66,6 +66,10 @@ export const CLI = {
     "  claude-statusbar --version    Show the version",
   ].join("\n"),
   unknownCommand: (name: string): string => `Unknown command: ${name}`,
+  /** `@inquirer/prompts` needs `node:util` `styleText` and declares `^22.13.0` on the 22 line. */
+  initMinNode: { major: 22, minor: 13 },
+  nodeTooOld: (current: string): string =>
+    `claude-statusbar init needs Node.js 22.13 or newer (found ${current}). Update Node.js and try again.`,
 } as const;
 
 export const MESSAGES = {

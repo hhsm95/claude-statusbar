@@ -10,7 +10,7 @@ Opus 5.5 │ high │ ◉ api-worker │ ⎇ feat/x ⌂ wt-a ↑2 │ 5h ▓▓�
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js 22.13 or newer
 - `git` on your `PATH` (optional; without it the git segment is simply hidden)
 - macOS, Linux or Windows
 
