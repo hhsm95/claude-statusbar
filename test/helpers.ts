@@ -1,6 +1,6 @@
 import { createAnsi } from "../src/format/ansi.ts";
 import { parseStatusInput, type StatusInput } from "../src/input.ts";
-import type { GitRunner, RenderContext } from "../src/segments/types.ts";
+import type { GitRunner, Piece, RenderContext } from "../src/segments/types.ts";
 
 export const PLAIN = createAnsi(false);
 export const COLORED = createAnsi(true);
@@ -29,3 +29,8 @@ export function makeContext(
 }
 
 export const fg = (code: number, text: string): string => `\x1b[38;5;${code}m${text}\x1b[0m`;
+
+/** Full-length print of a segment's pieces (`lead + paint(label + text)`), null passes through. */
+export function piecesText(pieces: readonly Piece[] | null): string | null {
+  return pieces === null ? null : pieces.map((p) => p.lead + p.paint(p.label + p.text)).join("");
+}

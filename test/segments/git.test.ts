@@ -10,7 +10,7 @@ import { render } from "../../src/render.ts";
 import { gitSegment } from "../../src/segments/git.ts";
 import { SEGMENTS } from "../../src/segments/registry.ts";
 import type { GitRunner } from "../../src/segments/types.ts";
-import { fg, makeContext } from "../helpers.ts";
+import { fg, makeContext, piecesText } from "../helpers.ts";
 
 let base: string;
 before(() => {
@@ -39,7 +39,9 @@ const commit = (dir: string, message = "c"): void => {
 };
 
 const renderAt = (dir: string, runner: GitRunner = runGit): string | null =>
-  gitSegment.render(makeContext({ workspace: { current_dir: dir } }, { runGit: runner }));
+  piecesText(
+    gitSegment.render(makeContext({ workspace: { current_dir: dir } }, { runGit: runner })),
+  );
 
 describe("git segment (real repos)", () => {
   test("branch on main without commits ahead", () => {
@@ -78,6 +80,23 @@ describe("git segment (real repos)", () => {
     commit(wt);
     assert.equal(renderAt(wt), `${fg(250, "⎇ feat/wt")} ${fg(244, "⌂ wt-b")} ${fg(114, "↑1")}`);
     assert.equal(renderAt(dir), fg(250, "⎇ main"));
+  });
+
+  test("branch and worktree folder are truncatable names, the ahead count is fixed", () => {
+    const dir = initRepo();
+    const wt = join(base, "wt-kinds");
+    git(dir, "worktree", "add", "-q", "-b", "feat/kinds", wt);
+    commit(wt);
+    const ctx = makeContext({ workspace: { current_dir: wt } }, { runGit });
+    const pieces = gitSegment.render(ctx) ?? [];
+    assert.deepEqual(
+      pieces.map((piece) => [piece.kind, piece.text]),
+      [
+        ["name", "feat/kinds"],
+        ["name", "wt-kinds"],
+        ["fixed", "↑1"],
+      ],
+    );
   });
 
   test("uses the upstream as base when there is no main, master or origin/HEAD", () => {
@@ -151,7 +170,7 @@ describe("git segment (fake runner)", () => {
       calls += 1;
       return null;
     };
-    assert.equal(gitSegment.render(makeContext({}, { runGit: counting })), null);
+    assert.equal(piecesText(gitSegment.render(makeContext({}, { runGit: counting }))), null);
     assert.equal(calls, 0);
   });
 
@@ -164,7 +183,7 @@ describe("git segment (fake runner)", () => {
     const config = defaultConfig();
     config.segments.git = false;
     const ctx = makeContext({ workspace: { current_dir: "/repo" } }, { runGit: counting });
-    render(config, ctx, SEGMENTS);
+    render(config, ctx, { segments: SEGMENTS });
     assert.equal(calls, 0);
   });
 

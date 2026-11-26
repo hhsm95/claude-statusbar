@@ -5,6 +5,7 @@ import { CLI, MAX_STDIN_BYTES, STRINGS } from "./constants.ts";
 import { createAnsi, isColorDisabled } from "./format/ansi.ts";
 import { runGit } from "./git.ts";
 import { parseStatusInput } from "./input.ts";
+import { parseColumns } from "./layout.ts";
 import { meetsMinimumNode } from "./node-version.ts";
 import { render } from "./render.ts";
 
@@ -32,7 +33,7 @@ async function renderFromStdin(): Promise<string> {
     const dir = claudeDir(process.env);
     const input = parseStatusInput(await readStdin());
     const ctx = { input, now: new Date(), claudeDir: dir, ansi, runGit };
-    return render(loadConfig(dir), ctx);
+    return render(loadConfig(dir), ctx, { columns: parseColumns(process.env) });
   } catch {
     return `${ansi.dim(STRINGS.noData)}\n`;
   }

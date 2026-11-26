@@ -1,6 +1,13 @@
 import { basename, resolve } from "node:path";
 import { COLORS, FALLBACK_BASES, GLYPHS } from "../constants.ts";
-import type { GitRunner, RenderContext, Segment } from "./types.ts";
+import {
+  fixed,
+  type GitRunner,
+  name,
+  type Piece,
+  type RenderContext,
+  type Segment,
+} from "./types.ts";
 
 const ORIGIN_PREFIX = "origin/";
 
@@ -34,7 +41,7 @@ function aheadCount(runGit: GitRunner, dir: string): number {
   return Number.isInteger(count) && count > 0 ? count : 0;
 }
 
-function render({ input, ansi, runGit }: RenderContext): string | null {
+function render({ input, ansi, runGit }: RenderContext): readonly Piece[] | null {
   const dir = input.currentDir;
   if (dir === undefined) return null;
   const root = runGit(dir, ["rev-parse", "--show-toplevel"]);
@@ -53,10 +60,14 @@ function render({ input, ansi, runGit }: RenderContext): string | null {
     !!gitDir && !!commonDir && resolve(root, gitDir) !== resolve(root, commonDir);
   const ahead = aheadCount(runGit, root);
 
-  let text = ansi.color(COLORS.git, `${GLYPHS.branch} ${branch}`);
-  if (isLinkedWorktree) text += ` ${ansi.dim(`${GLYPHS.worktree} ${basename(root)}`)}`;
-  if (ahead > 0) text += ` ${ansi.color(COLORS.ahead, `${GLYPHS.ahead}${ahead}`)}`;
-  return text;
+  const pieces = [name(branch, (s) => ansi.color(COLORS.git, s), "", `${GLYPHS.branch} `)];
+  if (isLinkedWorktree) {
+    pieces.push(name(basename(root), ansi.dim, " ", `${GLYPHS.worktree} `));
+  }
+  if (ahead > 0) {
+    pieces.push(fixed(`${GLYPHS.ahead}${ahead}`, (s) => ansi.color(COLORS.ahead, s), " "));
+  }
+  return pieces;
 }
 
 export const gitSegment: Segment = { id: "git", render };

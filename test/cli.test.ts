@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test } from "node:test";
@@ -57,6 +58,44 @@ describe("cli render", () => {
     assert.equal(result.status, 0);
     assert.ok(!result.stdout.includes(ESC));
     assert.match(result.stdout, /Opus 5\.5 │ high/);
+  });
+
+  test("COLUMNS from the environment shortens a long branch name", () => {
+    const repo = join(claude.dir(), "repo");
+    const git = (...args: string[]): void => {
+      execFileSync("git", args, { cwd: claude.dir(), stdio: "ignore" });
+    };
+    git("init", "-q", "-b", "feature-branch-with-a-long-name", repo);
+    execFileSync(
+      "git",
+      [
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.com",
+        "-c",
+        "commit.gpgsign=false",
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        "c",
+      ],
+      { cwd: repo, stdio: "ignore" },
+    );
+    const input = JSON.stringify({
+      model: { display_name: "Opus 5.5" },
+      workspace: { current_dir: repo },
+    });
+    const env = { ...claude.env(), NO_COLOR: "1" };
+
+    const narrow = runCli([], { input, env: { ...env, COLUMNS: "24" } });
+    assert.equal(narrow.stdout, "Opus 5.5 │ ⎇ feature-…\n");
+
+    for (const columns of [undefined, "abc", "200"]) {
+      const whole = runCli([], { input, env: { ...env, COLUMNS: columns } });
+      assert.equal(whole.stdout, "Opus 5.5 │ ⎇ feature-branch-with-a-long-name\n");
+    }
   });
 
   test("empty NO_COLOR keeps colors", () => {

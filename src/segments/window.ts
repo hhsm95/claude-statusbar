@@ -2,7 +2,7 @@ import { COLORS, GLYPHS, PERCENT, THRESHOLDS } from "../constants.ts";
 import { bar } from "../format/bar.ts";
 import { formatReset } from "../format/time.ts";
 import type { WindowInput } from "../input.ts";
-import type { RenderContext } from "./types.ts";
+import { bar as barPiece, fixed, type Piece, type RenderContext } from "./types.ts";
 
 function colorFor(pct: number): number {
   if (pct >= THRESHOLDS.windowCrit) return COLORS.crit;
@@ -10,12 +10,12 @@ function colorFor(pct: number): number {
   return COLORS.ok;
 }
 
-/** Shared by the 5h and 7d segments: `<label> <bar> <pct>% ↺<reset>`. */
+/** Shared by the 5h and 7d segments: `<label> <bar> <pct>% ↺<reset>`, as pieces. */
 export function renderWindow(
   label: string,
   window: WindowInput,
   ctx: RenderContext,
-): string | null {
+): readonly Piece[] | null {
   if (window.usedPct === undefined) return null;
   const nowSec = ctx.now.getTime() / 1000;
   const expired = window.resetsAt !== undefined && window.resetsAt <= nowSec;
@@ -24,9 +24,14 @@ export function renderWindow(
   const pct = Math.round(raw);
   const code = colorFor(pct);
   const { ansi } = ctx;
-  let text = `${label} ${ansi.color(code, bar(raw))} ${ansi.color(code, `${pct}%`)}`;
+  const paint = (text: string): string => ansi.color(code, text);
+  const pieces = [
+    fixed(label, (text) => text),
+    barPiece(bar(raw), paint, " "),
+    fixed(`${pct}%`, paint, " "),
+  ];
   if (window.resetsAt !== undefined && !expired) {
-    text += ` ${ansi.dim(`${GLYPHS.reset}${formatReset(window.resetsAt, ctx.now)}`)}`;
+    pieces.push(fixed(`${GLYPHS.reset}${formatReset(window.resetsAt, ctx.now)}`, ansi.dim, " "));
   }
-  return text;
+  return pieces;
 }

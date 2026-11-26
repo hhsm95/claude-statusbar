@@ -29,7 +29,10 @@ echo '{"model":{"display_name":"Opus 5.5"}}' | node dist/cli.js
 ## Adding a segment
 
 1. Create `src/segments/<name>.ts` exporting a `Segment`
-   (`{ id, render(ctx) }`). `render` returns the text to print, or `null` when there is no data.
+   (`{ id, render(ctx) }`). `render` returns the pieces to print (built with `fixed`, `name` and
+   `bar` from `src/segments/types.ts`), or `null` when there is no data. Use `fixed` for text that
+   must always show; `name` only for a name that may be truncated when the line is too wide (today
+   git branch and worktree); `bar` only for a part that may be dropped (today the quota bars).
    Read everything from `ctx` (parsed input, `now`, `claudeDir`, color helpers, `runGit`) so tests
    can inject fakes instead of touching the real clock, home directory or git.
 2. Add the new id to `SEGMENT_IDS` in `src/constants.ts`. The `SegmentId` type and the default
