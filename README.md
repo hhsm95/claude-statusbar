@@ -100,7 +100,7 @@ claude-statusbar details
 
 Run it inside Claude Code as `! claude-statusbar details` to see the full, untruncated values behind the status line: model, effort, session, git branch and worktree, quota windows with their reset times, context token counts, cache TTL and the session cost. Segments disabled in `statusbar.json` are skipped, and rows without data are omitted. The header shows how long ago the data was updated.
 
-Each render saves Claude Code's JSON as a snapshot in `<claude dir>/statusbar/snapshots/<session id>.json`, and `details` reads the one for the current session (`CLAUDE_CODE_SESSION_ID`). Snapshots older than 7 days are pruned. `uninstall` leaves `<claude dir>/statusbar/` in place; delete it by hand if you no longer want the snapshots. `details` exits with code 1 outside Claude Code or before the status line has rendered once.
+Each render saves Claude Code's JSON as a snapshot in `<claude dir>/statusbar/snapshots/<session id>.json`, and `details` reads the one for the current session (`CLAUDE_CODE_SESSION_ID`). The quota windows are the exception: Claude Code can hand an idle session an outdated quota, and the quota belongs to the account, so `details` takes the 5h and 7d values from whichever snapshot saw the most recent window (latest reset time, then highest usage). Snapshots older than 7 days are pruned. `uninstall` leaves `<claude dir>/statusbar/` in place; delete it by hand if you no longer want the snapshots. `details` exits with code 1 outside Claude Code or before the status line has rendered once.
 
 ## Uninstall
 

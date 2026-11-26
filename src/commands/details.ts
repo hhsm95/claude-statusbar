@@ -4,11 +4,11 @@ import { DETAIL_LABELS, DETAILS, ENV, STRINGS } from "../constants.ts";
 import { type Ansi, createAnsi, isColorDisabled } from "../format/ansi.ts";
 import { formatDuration } from "../format/time.ts";
 import { runGit } from "../git.ts";
-import { parseStatusInput } from "../input.ts";
+import { parseStatusInput, type StatusInput, type WindowInput } from "../input.ts";
 import { isJsonObject } from "../json-file.ts";
 import { SEGMENTS } from "../segments/registry.ts";
 import type { DetailRow, RenderContext, Segment } from "../segments/types.ts";
-import { isSafeSessionId, snapshotPath } from "../snapshot.ts";
+import { freshestWindow, isSafeSessionId, readAllWindows, snapshotPath } from "../snapshot.ts";
 import type { Io } from "./shared.ts";
 
 /** Header, then `label value` rows with dim labels padded to the longest; `no data` when empty. */
@@ -55,6 +55,25 @@ function readSnapshot(path: string): { raw: string; mtimeMs: number } | null {
   }
 }
 
+/** The quota is per account: take each window from whichever session saw it most recently. */
+function withFreshestQuota(input: StatusInput, dir: string): StatusInput {
+  // The current session competes explicitly, so it still counts when the directory can't be listed.
+  const all = readAllWindows(dir);
+  const pick = (own: WindowInput, others: readonly WindowInput[]): WindowInput =>
+    freshestWindow([own, ...others]) ?? {};
+  return {
+    ...input,
+    fiveHour: pick(
+      input.fiveHour,
+      all.map((w) => w.fiveHour),
+    ),
+    sevenDay: pick(
+      input.sevenDay,
+      all.map((w) => w.sevenDay),
+    ),
+  };
+}
+
 export function runDetails(
   env: Readonly<Record<string, string | undefined>>,
   io: Io,
@@ -74,7 +93,7 @@ export function runDetails(
   }
 
   const ansi = createAnsi(!isColorDisabled(env));
-  const input = parseStatusInput(snapshot.raw);
+  const input = withFreshestQuota(parseStatusInput(snapshot.raw), dir);
   const ctx: RenderContext = { input, now, claudeDir: dir, ansi, runGit };
   const rows = [...collectRows(segments, loadConfig(dir).segments, ctx), ...costRow(input.costUsd)];
   const ageSec = Math.max(0, Math.floor((now.getTime() - snapshot.mtimeMs) / 1000));
