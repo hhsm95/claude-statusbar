@@ -37,8 +37,11 @@ is no Jest/Vitest. Source imports use explicit `.ts` extensions (rewritten to `.
   `statusbar.json` → `render` (`src/render.ts`) iterates `SEGMENTS` in registry order, skips disabled
   ones, swallows any segment exception, and joins non-empty outputs with a dim `│`. Any failure ends in
   the dim `no data` line; the renderer must never throw or stall.
-- **Segments** (`src/segments/`): each exports a `Segment` `{ id, render(ctx) }` returning text or
-  `null`. Everything external comes through `RenderContext` (`input`, `now`, `claudeDir`, `ansi`,
+- **Segments** (`src/segments/`): each exports a `Segment` `{ id, render(ctx) }` returning typed
+  pieces (`fixed` / `name` / `bar` from `types.ts`) or `null`. `src/layout.ts` fits them to the
+  `COLUMNS` width: truncates `name` pieces (git branch/worktree), then drops `bar` pieces, else
+  wraps the compact form onto more lines; without `COLUMNS` it is one full-length line.
+  Everything external comes through `RenderContext` (`input`, `now`, `claudeDir`, `ansi`,
   `runGit`) so tests inject fakes (see `test/helpers.ts`: `makeContext`, fixed `NOW`, `noGit`).
   Display order = array order in `src/segments/registry.ts`.
 - **Adding a segment**: new file in `src/segments/`, add its id to `SEGMENT_IDS` in

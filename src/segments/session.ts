@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { FILES, GLYPHS, MS_PER_SECOND } from "../constants.ts";
 import { formatStart } from "../format/time.ts";
 import { isJsonObject } from "../json-file.ts";
-import type { Segment } from "./types.ts";
+import { fixed, type Segment } from "./types.ts";
 
 const SESSION_FILE_SUFFIX = ".json";
 
@@ -51,7 +51,7 @@ export const sessionSegment: Segment = {
     const dir = join(claudeDir, FILES.sessionsDir);
     for (const file of listSessionFiles(dir)) {
       const session = readSession(join(dir, file), input.sessionId);
-      if (session !== undefined) return ansi.dim(sessionLabel(session, now));
+      if (session !== undefined) return [fixed(sessionLabel(session, now), ansi.dim)];
     }
     return null;
   },

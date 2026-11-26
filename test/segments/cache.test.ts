@@ -11,7 +11,7 @@ import {
   SECONDS_PER_MINUTE,
 } from "../../src/constants.ts";
 import { cacheSegment } from "../../src/segments/cache.ts";
-import { fg, makeContext, NOW } from "../helpers.ts";
+import { fg, makeContext, NOW, piecesText } from "../helpers.ts";
 
 let dir: string;
 beforeEach(() => {
@@ -60,17 +60,20 @@ describe("cache segment", () => {
     const warn = CACHE_WARN_SECONDS[ttl] as number;
 
     test(`ttl ${ttl}: hidden one second above the warning window`, () => {
-      assert.equal(cacheSegment.render(ctxWith(ttl, warn + 1)), null);
+      assert.equal(piecesText(cacheSegment.render(ctxWith(ttl, warn + 1))), null);
     });
 
     test(`ttl ${ttl}: warns at the edge of the window`, () => {
       const minutes = Math.floor(warn / SECONDS_PER_MINUTE);
-      assert.equal(cacheSegment.render(ctxWith(ttl, warn)), fg(COLORS.warn, `⏱ cache ${minutes}m`));
+      assert.equal(
+        piecesText(cacheSegment.render(ctxWith(ttl, warn))),
+        fg(COLORS.warn, `⏱ cache ${minutes}m`),
+      );
     });
 
     test(`ttl ${ttl}: expired shows the prompt size`, () => {
       assert.equal(
-        cacheSegment.render(ctxWith(ttl, -1)),
+        piecesText(cacheSegment.render(ctxWith(ttl, -1))),
         fg(COLORS.crit, "⚠ cache expired · 96K tok"),
       );
     });
@@ -79,28 +82,28 @@ describe("cache segment", () => {
   test("rounds remaining down to whole minutes", () => {
     const ttl = CACHE_TTL_SECONDS.oneHour;
     assert.equal(
-      cacheSegment.render(ctxWith(ttl, 8 * SECONDS_PER_MINUTE + 40)),
+      piecesText(cacheSegment.render(ctxWith(ttl, 8 * SECONDS_PER_MINUTE + 40))),
       fg(COLORS.warn, "⏱ cache 8m"),
     );
   });
 
   test("shows <1m under one minute", () => {
     const ttl = CACHE_TTL_SECONDS.oneHour;
-    assert.equal(cacheSegment.render(ctxWith(ttl, 30)), fg(COLORS.warn, "⏱ cache <1m"));
+    assert.equal(piecesText(cacheSegment.render(ctxWith(ttl, 30))), fg(COLORS.warn, "⏱ cache <1m"));
   });
 
   test("is expired exactly at expiry", () => {
-    const out = cacheSegment.render(ctxWith(CACHE_TTL_SECONDS.oneHour, 0));
+    const out = piecesText(cacheSegment.render(ctxWith(CACHE_TTL_SECONDS.oneHour, 0)));
     assert.equal(out, fg(COLORS.crit, "⚠ cache expired · 96K tok"));
   });
 
   test("is hidden without transcript_path", () => {
-    assert.equal(cacheSegment.render(makeContext({})), null);
+    assert.equal(piecesText(cacheSegment.render(makeContext({}))), null);
   });
 
   test("is hidden when the transcript is missing", () => {
     assert.equal(
-      cacheSegment.render(makeContext({ transcript_path: join(dir, "nope.jsonl") })),
+      piecesText(cacheSegment.render(makeContext({ transcript_path: join(dir, "nope.jsonl") }))),
       null,
     );
   });

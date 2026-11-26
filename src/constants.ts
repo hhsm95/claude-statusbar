@@ -26,6 +26,14 @@ export const GLYPHS = {
   cacheExpired: "⚠",
   dot: "·",
   separator: "│",
+  ellipsis: "…",
+} as const;
+
+/** Width fitting: `margin` columns kept free, `minName` is the shortest a name is cut to. */
+export const WIDTH = {
+  margin: 2,
+  minName: 8,
+  wideGlyphs: [GLYPHS.cacheWarn, GLYPHS.cacheExpired],
 } as const;
 
 export const BAR_CELLS = 10;
@@ -140,6 +148,7 @@ export const FILES = {
 export const ENV = {
   configDir: "CLAUDE_CONFIG_DIR",
   noColor: "NO_COLOR",
+  columns: "COLUMNS",
 } as const;
 
 export const SEGMENT_IDS = [

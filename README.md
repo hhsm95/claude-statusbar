@@ -58,6 +58,16 @@ Details:
 - `cache` reads the end of the session transcript to find when the last request started and which cache lifetime it used: 1 hour on subscriptions, 5 minutes in usage overage or on some API-key setups. Every request restarts that lifetime, so only idle time makes the cache expire. The next message after expiry re-sends the whole context at the cache-write price, which is what the token count in the red state measures.
 - The git base branch is `origin/HEAD`'s target (preferring the local branch of the same name), else local `main`, else `master`, else the upstream branch. With no base there is no ahead count.
 
+### Narrow terminals
+
+Claude Code passes the terminal width to the status line in the `COLUMNS` environment variable, and it updates when you resize the window. When the full line does not fit, it is shortened in this order, stopping at the first step that fits:
+
+1. The git branch and worktree names are truncated with `…`, both to the same length, never below 8 characters.
+2. The quota bars are removed, keeping the percentages and reset times. The names get back as much length as now fits.
+3. If it still does not fit, that most compact line wraps onto more lines, filled in segment order, so nothing is cut off on the right. A single segment wider than the window takes a line of its own. No segment is hidden for lack of space.
+
+Without `COLUMNS` (for example when running `claude-statusbar` by hand) the line is never shortened. This was verified in Warp and macOS Terminal.app; on other terminals and platforms the line falls back to full length if `COLUMNS` is not provided.
+
 ## Configuration
 
 Settings live in `statusbar.json` inside Claude Code's config directory: `~/.claude/` by default, or `$CLAUDE_CONFIG_DIR` when that variable is set.

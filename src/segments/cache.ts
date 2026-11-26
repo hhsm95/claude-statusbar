@@ -8,7 +8,7 @@ import {
 } from "../constants.ts";
 import { humanTokens } from "../format/tokens.ts";
 import { readLastRequest } from "../transcript.ts";
-import type { Segment } from "./types.ts";
+import { fixed, type Segment } from "./types.ts";
 
 export const cacheSegment: Segment = {
   id: "cache",
@@ -21,11 +21,12 @@ export const cacheSegment: Segment = {
       request.startMs / MS_PER_SECOND + request.ttlSec - now.getTime() / MS_PER_SECOND;
     if (remaining <= 0) {
       const text = `${GLYPHS.cacheExpired} ${STRINGS.cacheExpired} ${GLYPHS.dot} ${humanTokens(request.promptTokens)} ${STRINGS.tokens}`;
-      return ansi.color(COLORS.crit, text);
+      return [fixed(text, (s) => ansi.color(COLORS.crit, s))];
     }
     if (remaining > (CACHE_WARN_SECONDS[request.ttlSec] ?? 0)) return null;
     const minutes = Math.floor(remaining / SECONDS_PER_MINUTE);
     const left = minutes < 1 ? STRINGS.underOneMinute : `${minutes}${STRINGS.minuteSuffix}`;
-    return ansi.color(COLORS.warn, `${GLYPHS.cacheWarn} ${STRINGS.cache} ${left}`);
+    const text = `${GLYPHS.cacheWarn} ${STRINGS.cache} ${left}`;
+    return [fixed(text, (s) => ansi.color(COLORS.warn, s))];
   },
 };
