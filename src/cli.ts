@@ -8,6 +8,7 @@ import { parseStatusInput } from "./input.ts";
 import { parseColumns } from "./layout.ts";
 import { meetsMinimumNode } from "./node-version.ts";
 import { render } from "./render.ts";
+import { saveSnapshot } from "./snapshot.ts";
 
 async function readStdin(): Promise<string> {
   if (process.stdin.isTTY) return "";
@@ -31,9 +32,17 @@ async function renderFromStdin(): Promise<string> {
   const ansi = createAnsi(!isColorDisabled(process.env));
   try {
     const dir = claudeDir(process.env);
-    const input = parseStatusInput(await readStdin());
-    const ctx = { input, now: new Date(), claudeDir: dir, ansi, runGit };
-    return render(loadConfig(dir), ctx, { columns: parseColumns(process.env) });
+    const raw = await readStdin();
+    const input = parseStatusInput(raw);
+    const now = new Date();
+    const ctx = { input, now, claudeDir: dir, ansi, runGit };
+    const line = render(loadConfig(dir), ctx, { columns: parseColumns(process.env) });
+    try {
+      saveSnapshot(dir, raw, now);
+    } catch {
+      // The snapshot is a side channel for `details`; it never affects the line.
+    }
+    return line;
   } catch {
     return `${ansi.dim(STRINGS.noData)}\n`;
   }
@@ -77,6 +86,10 @@ async function main(args: readonly string[]): Promise<number> {
   if (first === CLI.commands.uninstall) {
     const { runUninstall } = await import("./commands/uninstall.ts");
     return runUninstall(process.env, io);
+  }
+  if (first === CLI.commands.details) {
+    const { runDetails } = await import("./commands/details.ts");
+    return runDetails(process.env, io);
   }
   io.err(`${CLI.unknownCommand(first)}\n${CLI.usage}\n`);
   return 1;

@@ -39,6 +39,16 @@ export const WIDTH = {
 export const BAR_CELLS = 10;
 export const SECONDS_PER_DAY = 86400;
 export const SECONDS_PER_MINUTE = 60;
+export const SECONDS_PER_HOUR = 3600;
+
+/** Units for `formatDuration`, largest first. */
+export const DURATION_UNITS = [
+  { suffix: "d", seconds: SECONDS_PER_DAY },
+  { suffix: "h", seconds: SECONDS_PER_HOUR },
+  { suffix: "m", seconds: SECONDS_PER_MINUTE },
+  { suffix: "s", seconds: 1 },
+] as const;
+export const DURATION_MAX_UNITS = 2;
 export const MS_PER_SECOND = 1000;
 
 /** Prompt-cache TTLs used by the Claude API, in seconds. */
@@ -87,18 +97,65 @@ export const STRINGS = {
   underOneMinute: "<1m",
 } as const;
 
+/** Row labels of the `details` command (plain; the renderer pads them). */
+export const DETAIL_LABELS = {
+  model: "Model",
+  effort: "Effort",
+  session: "Session",
+  git: "Git",
+  worktree: "Worktree",
+  fiveHour: "5h limit",
+  sevenDay: "7d limit",
+  context: "Context",
+  cache: "Cache",
+  cost: "Cost",
+} as const;
+
+/** Words used inside `details` row values. */
+export const DETAIL_TEXT = {
+  started: "started",
+  resets: "resets",
+  resetPassed: "reset passed",
+  in: "in",
+  ago: "ago",
+  out: "out",
+  tokens: "tokens",
+  warm: "warm",
+  expired: "expired",
+  ttl: "TTL",
+  expires: "expires",
+  promptTokens: "prompt tokens",
+  tokensToRecache: "tokens to re-cache",
+  zeroDuration: "0s",
+  ttlFiveMinutes: "5m",
+  ttlOneHour: "1h",
+} as const;
+
+export const DETAILS = {
+  header: (age: string): string => `claude-statusbar details ${GLYPHS.dot} updated ${age} ago`,
+  labelGap: " ",
+  costPrefix: "$",
+  costDecimals: 2,
+  noSession:
+    "No Claude Code session found. Run it from inside Claude Code as: ! claude-statusbar details",
+  noSnapshot:
+    "No status data for this session yet. Wait for the status line to render once and try again.",
+} as const;
+
 export const CLI = {
   packageFile: "package.json",
   helpFlags: ["--help", "-h"],
   versionFlags: ["--version", "-v"],
   yesFlag: "--yes",
-  commands: { init: "init", uninstall: "uninstall" },
+  commands: { init: "init", uninstall: "uninstall", details: "details" },
   usage: [
     "Usage:",
     "  claude-statusbar              Render the status line from Claude Code's JSON on stdin",
     "  claude-statusbar init         Choose segments and install into Claude Code settings",
     "                                (--yes: no prompts, keep or enable all segments)",
     "  claude-statusbar uninstall    Restore the previous status line, or remove this one",
+    "  claude-statusbar details      Show the full details of the current session",
+    "                                (run it inside Claude Code as: ! claude-statusbar details)",
     "  claude-statusbar --help       Show this help",
     "  claude-statusbar --version    Show the version",
   ].join("\n"),
@@ -145,10 +202,22 @@ export const FILES = {
   claudeDirName: ".claude",
 } as const;
 
+const MS_PER_DAY = SECONDS_PER_DAY * MS_PER_SECOND;
+
+export const SNAPSHOT = {
+  /** Directory parts under the Claude config dir. */
+  dirParts: ["statusbar", "snapshots"],
+  fileSuffix: ".json",
+  tempSuffix: ".tmp",
+  retentionMs: 7 * MS_PER_DAY,
+  sessionIdPattern: /^[A-Za-z0-9_-]{1,128}$/,
+} as const;
+
 export const ENV = {
   configDir: "CLAUDE_CONFIG_DIR",
   noColor: "NO_COLOR",
   columns: "COLUMNS",
+  sessionId: "CLAUDE_CODE_SESSION_ID",
 } as const;
 
 export const SEGMENT_IDS = [

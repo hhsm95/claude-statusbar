@@ -1,9 +1,9 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { FILES, GLYPHS, MS_PER_SECOND } from "../constants.ts";
+import { DETAIL_LABELS, DETAIL_TEXT, FILES, GLYPHS, MS_PER_SECOND } from "../constants.ts";
 import { formatStart } from "../format/time.ts";
 import { isJsonObject } from "../json-file.ts";
-import { fixed, type Segment } from "./types.ts";
+import { fixed, type RenderContext, type Segment } from "./types.ts";
 
 const SESSION_FILE_SUFFIX = ".json";
 
@@ -43,16 +43,32 @@ function listSessionFiles(dir: string): string[] {
   }
 }
 
+function findSession({ input, claudeDir }: RenderContext): SessionInfo | undefined {
+  if (input.sessionId === undefined) return undefined;
+  const dir = join(claudeDir, FILES.sessionsDir);
+  for (const file of listSessionFiles(dir)) {
+    const session = readSession(join(dir, file), input.sessionId);
+    if (session !== undefined) return session;
+  }
+  return undefined;
+}
+
+function sessionDetail({ name, startedAtMs }: SessionInfo, now: Date): string {
+  if (startedAtMs === undefined) return name;
+  const started = formatStart(startedAtMs / MS_PER_SECOND, now);
+  return `${name} ${GLYPHS.dot} ${DETAIL_TEXT.started} ${started}`;
+}
+
 /** Best-effort: `<claudeDir>/sessions/*.json` is undocumented, so any mismatch hides the segment. */
 export const sessionSegment: Segment = {
   id: "session",
-  render: ({ input, claudeDir, ansi, now }) => {
-    if (input.sessionId === undefined) return null;
-    const dir = join(claudeDir, FILES.sessionsDir);
-    for (const file of listSessionFiles(dir)) {
-      const session = readSession(join(dir, file), input.sessionId);
-      if (session !== undefined) return [fixed(sessionLabel(session, now), ansi.dim)];
-    }
-    return null;
+  render: (ctx) => {
+    const session = findSession(ctx);
+    return session === undefined ? null : [fixed(sessionLabel(session, ctx.now), ctx.ansi.dim)];
+  },
+  detail: (ctx) => {
+    const session = findSession(ctx);
+    if (session === undefined) return null;
+    return [{ label: DETAIL_LABELS.session, value: sessionDetail(session, ctx.now) }];
   },
 };

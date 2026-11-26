@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { formatReset } from "../../src/format/time.ts";
+import { formatClock, formatDuration, formatReset, ttlLabel } from "../../src/format/time.ts";
 
 const NOW_SEC = Date.UTC(2026, 10, 15, 12, 0, 0) / 1000;
 const now = new Date(NOW_SEC * 1000);
@@ -46,5 +46,45 @@ describe("formatReset", () => {
       const at = Date.UTC(2027, month, 5, 1, 2, 0) / 1000;
       assert.equal(formatReset(at, new Date(Date.UTC(2026, 0, 1))), `05 ${name} 01:02`);
     }
+  });
+});
+
+describe("formatDuration", () => {
+  test("keeps the two largest non-zero units", () => {
+    assert.equal(formatDuration(2 * 3600 + 12 * 60 + 40), "2h 12m");
+    assert.equal(formatDuration(5 * 86400 + 6 * 3600 + 7), "5d 6h");
+    assert.equal(formatDuration(12 * 60), "12m");
+    assert.equal(formatDuration(4), "4s");
+  });
+
+  test("skips zero units between non-zero ones", () => {
+    assert.equal(formatDuration(3600 + 5), "1h 5s");
+    assert.equal(formatDuration(86400 + 60), "1d 1m");
+  });
+
+  test("zero is 0s and negative input is its absolute value", () => {
+    assert.equal(formatDuration(0), "0s");
+    assert.equal(formatDuration(-(3 * 60 + 10)), "3m 10s");
+  });
+
+  test("fractional seconds are floored", () => {
+    assert.equal(formatDuration(59.9), "59s");
+  });
+});
+
+describe("formatClock", () => {
+  test("prints local HH:MM", () => {
+    assert.equal(formatClock(Date.UTC(2026, 10, 15, 9, 5, 0) / 1000), "09:05");
+  });
+});
+
+describe("ttlLabel", () => {
+  test("5 minutes and 1 hour", () => {
+    assert.equal(ttlLabel(300), "5m");
+    assert.equal(ttlLabel(3600), "1h");
+  });
+
+  test("other values fall back to a duration", () => {
+    assert.equal(ttlLabel(90), "1m 30s");
   });
 });

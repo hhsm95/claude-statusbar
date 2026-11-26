@@ -27,10 +27,18 @@ export interface Piece {
   paint: Paint;
 }
 
+/** One `label  value` line of the `details` command; `value` may carry ANSI, `label` is plain. */
+export interface DetailRow {
+  label: string;
+  value: string;
+}
+
 export interface Segment {
   id: SegmentId;
   /** Returns the pieces to print, or null when there is nothing to show. */
   render(ctx: RenderContext): readonly Piece[] | null;
+  /** Full-length rows for the `details` command, or null when there is nothing to show. */
+  detail?(ctx: RenderContext): readonly DetailRow[] | null;
 }
 
 /** A piece that is never shortened or dropped. */

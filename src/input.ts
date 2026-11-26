@@ -18,6 +18,7 @@ export interface StatusInput {
   sessionId?: string;
   currentDir?: string;
   transcriptPath?: string;
+  costUsd?: number;
   context: ContextInput;
   fiveHour: WindowInput;
   sevenDay: WindowInput;
@@ -65,12 +66,14 @@ function parseJson(raw: string): unknown {
 /** Never throws: anything unreadable becomes a missing field. */
 export function parseStatusInput(raw: string): StatusInput {
   const root = parseJson(raw);
+  const cost = num(root, ["cost", "total_cost_usd"]);
   return {
     modelName: str(root, ["model", "display_name"]),
     effortLevel: str(root, ["effort", "level"]),
     sessionId: str(root, ["session_id"]),
     currentDir: str(root, ["workspace", "current_dir"]) ?? str(root, ["cwd"]),
     transcriptPath: str(root, ["transcript_path"]),
+    ...(cost !== undefined && cost >= 0 ? { costUsd: cost } : {}),
     context: {
       inputTokens: num(root, ["context_window", "total_input_tokens"]),
       outputTokens: num(root, ["context_window", "total_output_tokens"]),

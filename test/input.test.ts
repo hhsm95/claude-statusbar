@@ -88,6 +88,18 @@ describe("parseStatusInput", () => {
     assert.equal(input.context.size, undefined);
   });
 
+  test("reads cost.total_cost_usd as a finite, non-negative number", () => {
+    const cost = (value: unknown) =>
+      parseStatusInput(JSON.stringify({ cost: { total_cost_usd: value } })).costUsd;
+    assert.equal(cost(3.4219), 3.4219);
+    assert.equal(cost(0), 0);
+    assert.equal(cost("1.5"), 1.5);
+    for (const bad of [-0.01, "abc", {}, null, true]) {
+      assert.equal(cost(bad), undefined, String(bad));
+    }
+    assert.equal(parseStatusInput("{}").costUsd, undefined);
+  });
+
   test("currentDir falls back to cwd", () => {
     assert.equal(parseStatusInput(JSON.stringify({ cwd: "/c" })).currentDir, "/c");
     assert.equal(

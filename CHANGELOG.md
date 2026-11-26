@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `claude-statusbar details` prints the full, untruncated values behind the status line (model,
+  effort, session, git, quota windows with reset times, context, cache and session cost). Run it
+  inside Claude Code as `! claude-statusbar details`.
+- Each render saves a per-session snapshot of Claude Code's JSON in
+  `<claude dir>/statusbar/snapshots/`, pruned after 7 days.
+
 ## [0.3.0] - 2026-11-25
 
 ### Added
