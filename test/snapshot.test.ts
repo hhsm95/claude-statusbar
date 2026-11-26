@@ -12,7 +12,13 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
-import { isSafeSessionId, saveSnapshot, snapshotPath } from "../src/snapshot.ts";
+import {
+  freshestWindow,
+  isSafeSessionId,
+  readAllWindows,
+  saveSnapshot,
+  snapshotPath,
+} from "../src/snapshot.ts";
 
 const NOW = new Date("2026-06-15T12:00:00Z");
 const DAY_SEC = 86_400;
@@ -136,5 +142,86 @@ describe("snapshot pruning", () => {
     assert.doesNotThrow(() => saveSnapshot(dir, '{"session_id":"fresh"}', NOW));
     assert.equal(existsSync(stuck), true);
     assert.equal(existsSync(old), false);
+  });
+});
+
+describe("freshestWindow", () => {
+  test("the latest reset time wins over a higher percentage", () => {
+    const old = { usedPct: 95, resetsAt: 1000 };
+    const current = { usedPct: 10, resetsAt: 2000 };
+    assert.deepEqual(freshestWindow([old, current]), current);
+    assert.deepEqual(freshestWindow([current, old]), current);
+  });
+
+  test("with the same reset time, the highest percentage wins", () => {
+    const stale = { usedPct: 48, resetsAt: 2000 };
+    const fresh = { usedPct: 78, resetsAt: 2000 };
+    assert.deepEqual(freshestWindow([stale, fresh]), fresh);
+    assert.deepEqual(freshestWindow([fresh, stale]), fresh);
+  });
+
+  test("a window without a reset time ranks below one that has it", () => {
+    const noReset = { usedPct: 99 };
+    const withReset = { usedPct: 5, resetsAt: 1000 };
+    assert.deepEqual(freshestWindow([noReset, withReset]), withReset);
+    assert.deepEqual(freshestWindow([withReset, noReset]), withReset);
+  });
+
+  test("windows without a percentage are not candidates", () => {
+    assert.deepEqual(freshestWindow([{ resetsAt: 9000 }, { usedPct: 3, resetsAt: 1 }]), {
+      usedPct: 3,
+      resetsAt: 1,
+    });
+    assert.equal(freshestWindow([{ resetsAt: 9000 }, {}]), undefined);
+    assert.equal(freshestWindow([]), undefined);
+  });
+});
+
+describe("readAllWindows", () => {
+  function plantSnapshot(name: string, content: string): void {
+    mkdirSync(snapshotsDir(), { recursive: true });
+    writeFileSync(join(snapshotsDir(), name), content);
+  }
+
+  const quota = (five: number, seven: number): string =>
+    JSON.stringify({
+      rate_limits: {
+        five_hour: { used_percentage: five, resets_at: 100 },
+        seven_day: { used_percentage: seven, resets_at: 200 },
+      },
+    });
+
+  test("returns the windows of every snapshot", () => {
+    plantSnapshot("a.json", quota(10, 20));
+    plantSnapshot("b.json", quota(30, 40));
+    const windows = readAllWindows(dir);
+    const fives = windows.map((w) => w.fiveHour.usedPct).sort();
+    const sevens = windows.map((w) => w.sevenDay.usedPct).sort();
+    assert.deepEqual(fives, [10, 30]);
+    assert.deepEqual(sevens, [20, 40]);
+  });
+
+  test("skips temp files and non-json names; invalid JSON yields no quota", () => {
+    plantSnapshot("a.json", quota(10, 20));
+    plantSnapshot(".a.json.123.tmp", quota(90, 90));
+    plantSnapshot("notes.txt", quota(90, 90));
+    plantSnapshot("broken.json", "{not json");
+    plantSnapshot("array.json", "[1,2]");
+    const fives = readAllWindows(dir).map((w) => w.fiveHour.usedPct);
+    assert.equal(fives.includes(90), false);
+    assert.equal(fives.includes(10), true);
+  });
+
+  test("skips an entry that fails to read and keeps the others", () => {
+    plantSnapshot("a.json", quota(10, 20));
+    mkdirSync(join(snapshotsDir(), "weird.json"));
+    assert.deepEqual(
+      readAllWindows(dir).map((w) => w.fiveHour.usedPct),
+      [10],
+    );
+  });
+
+  test("returns an empty list when the directory is missing", () => {
+    assert.deepEqual(readAllWindows(dir), []);
   });
 });

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, utimesSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, utimesSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { describe, test } from "node:test";
 import { formatDetails, runDetails } from "../../src/commands/details.ts";
@@ -170,5 +170,98 @@ describe("details via the CLI", () => {
     const result = runCli(["details"], { env });
     assert.equal(result.status, 0);
     assert.match(result.stdout, /^claude-statusbar details · updated \d+s ago\nModel Opus 5\.5\n$/);
+  });
+});
+
+describe("runDetails quota across sessions", () => {
+  const nowSec = NOW.getTime() / 1000;
+  const SOON = nowSec + 2 * 3600;
+  const LATER = nowSec + 5 * 24 * 3600;
+
+  interface Window {
+    pct: number;
+    reset: number;
+  }
+
+  function snapshot(five?: Window, seven?: Window): string {
+    const limit = (w: Window) => ({ used_percentage: w.pct, resets_at: w.reset });
+    const rateLimits = {
+      ...(five && { five_hour: limit(five) }),
+      ...(seven && { seven_day: limit(seven) }),
+    };
+    return JSON.stringify({ model: { display_name: "Opus" }, rate_limits: rateLimits });
+  }
+
+  function writeSibling(id: string, content: string): void {
+    const path = snapshotPath(claude.dir(), id);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, content);
+  }
+
+  function row(out: string, label: string): string | undefined {
+    return out.split("\n").find((line) => line.startsWith(label));
+  }
+
+  test("a stale session shows the higher usage of a sibling with the same reset", () => {
+    writeSnapshot(snapshot({ pct: 48, reset: SOON }));
+    writeSibling("other", snapshot({ pct: 78, reset: SOON }));
+    assert.match(row(run().out, "5h limit") ?? "", /78% · resets/);
+  });
+
+  test("a newer window wins over a higher, older one", () => {
+    writeSnapshot(snapshot({ pct: 95, reset: SOON - 6 * 3600 }));
+    writeSibling("other", snapshot({ pct: 10, reset: SOON }));
+    // NOW is 12:00 UTC and setup.ts forces TZ=UTC, so SOON prints as 14:00.
+    assert.match(row(run().out, "5h limit") ?? "", /10% · resets 14:00 /);
+  });
+
+  test("5h and 7d are chosen independently", () => {
+    writeSnapshot(snapshot({ pct: 20, reset: SOON }, { pct: 30, reset: LATER }));
+    writeSibling("a", snapshot({ pct: 60, reset: SOON }, { pct: 5, reset: LATER }));
+    writeSibling("b", snapshot({ pct: 1, reset: SOON }, { pct: 70, reset: LATER }));
+    const { out } = run();
+    assert.match(row(out, "5h limit") ?? "", /60%/);
+    assert.match(row(out, "7d limit") ?? "", /70%/);
+  });
+
+  test("other rows still come from the current session", () => {
+    writeSnapshot(snapshot({ pct: 48, reset: SOON }));
+    writeSibling(
+      "other",
+      JSON.stringify({
+        model: { display_name: "Other model" },
+        rate_limits: { five_hour: { used_percentage: 78, resets_at: SOON } },
+      }),
+    );
+    assert.equal(row(run().out, "Model"), "Model    Opus");
+  });
+
+  test("a sibling with invalid JSON is ignored", () => {
+    writeSnapshot(snapshot({ pct: 48, reset: SOON }));
+    writeSibling("broken", "{not json");
+    const { code, out } = run();
+    assert.equal(code, 0);
+    assert.match(row(out, "5h limit") ?? "", /48%/);
+  });
+
+  test("uses the current session's quota when the directory can't be listed", {
+    skip: process.platform === "win32",
+  }, () => {
+    writeSnapshot(snapshot({ pct: 48, reset: SOON }));
+    const dir = dirname(snapshotPath(claude.dir(), SESSION));
+    chmodSync(dir, 0o311);
+    try {
+      assert.match(row(run().out, "5h limit") ?? "", /48%/);
+    } finally {
+      chmodSync(dir, 0o755);
+    }
+  });
+
+  test("no quota rows when no snapshot has rate limits", () => {
+    writeSnapshot(JSON.stringify({ model: { display_name: "Opus" } }));
+    writeSibling("other", JSON.stringify({ model: { display_name: "Other" } }));
+    const { out } = run();
+    assert.equal(row(out, "5h limit"), undefined);
+    assert.equal(row(out, "7d limit"), undefined);
   });
 });
