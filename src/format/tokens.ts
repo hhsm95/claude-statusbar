@@ -9,3 +9,8 @@ export function humanTokens(n: number): string {
   if (n >= THOUSAND) return `${(n / THOUSAND).toFixed(1)}K`;
   return `${Math.trunc(n)}`;
 }
+
+/** Whole number with `,` thousands separators, whatever the locale. */
+export function fullNumber(n: number): string {
+  return Math.round(n).toLocaleString("en-US");
+}

@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
 import { defaultConfig } from "../../src/config.ts";
+import { COLORS } from "../../src/constants.ts";
+import { createAnsi } from "../../src/format/ansi.ts";
 import { runGit } from "../../src/git.ts";
 import { render } from "../../src/render.ts";
 import { gitSegment } from "../../src/segments/git.ts";
@@ -192,5 +194,65 @@ describe("git segment (fake runner)", () => {
       renderAt("/repo", () => null),
       null,
     );
+  });
+});
+
+describe("git segment detail rows", () => {
+  const detailAt = (dir: string, runner: GitRunner = runGit) =>
+    gitSegment.detail?.(
+      makeContext({ workspace: { current_dir: dir } }, { runGit: runner, ansi: createAnsi(false) }),
+    );
+
+  test("long branch is not truncated and shows the ahead count", () => {
+    const dir = initRepo();
+    const branch = "feat/details-command-with-a-very-long-name";
+    git(dir, "checkout", "-q", "-b", branch);
+    commit(dir);
+    commit(dir);
+    assert.deepEqual(detailAt(dir), [{ label: "Git", value: `${branch} · ↑2` }]);
+  });
+
+  test("branch and ahead count keep the line's colors", () => {
+    const dir = initRepo();
+    git(dir, "checkout", "-q", "-b", "feat/x");
+    commit(dir);
+    const rows = gitSegment.detail?.(
+      makeContext({ workspace: { current_dir: dir } }, { runGit, ansi: createAnsi(true) }),
+    );
+    assert.deepEqual(rows, [
+      {
+        label: "Git",
+        value: `${fg(COLORS.git, "feat/x")} · ${fg(COLORS.ahead, "↑1")}`,
+      },
+    ]);
+  });
+
+  test("no ahead suffix on the base branch", () => {
+    assert.deepEqual(detailAt(initRepo()), [{ label: "Git", value: "main" }]);
+  });
+
+  test("detached HEAD shows the short hash", () => {
+    const dir = initRepo();
+    const sha = git(dir, "rev-parse", "--short", "HEAD");
+    git(dir, "checkout", "-q", "--detach");
+    assert.deepEqual(detailAt(dir), [{ label: "Git", value: sha }]);
+  });
+
+  test("a linked worktree adds a Worktree row", () => {
+    const dir = initRepo();
+    const wt = join(base, "wt-detail");
+    git(dir, "worktree", "add", "-q", "-b", "feat/detail", wt);
+    assert.deepEqual(detailAt(wt), [
+      { label: "Git", value: "feat/detail" },
+      { label: "Worktree", value: "wt-detail" },
+    ]);
+  });
+
+  test("null outside a repository or without a directory", () => {
+    assert.equal(
+      detailAt("/repo", () => null),
+      null,
+    );
+    assert.equal(gitSegment.detail?.(makeContext({})), null);
   });
 });

@@ -1,6 +1,19 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { humanTokens } from "../../src/format/tokens.ts";
+import { fullNumber, humanTokens } from "../../src/format/tokens.ts";
+
+describe("fullNumber", () => {
+  test("uses comma thousands separators", () => {
+    assert.equal(fullNumber(0), "0");
+    assert.equal(fullNumber(999), "999");
+    assert.equal(fullNumber(1000), "1,000");
+    assert.equal(fullNumber(1234567), "1,234,567");
+  });
+
+  test("rounds to an integer", () => {
+    assert.equal(fullNumber(1234.6), "1,235");
+  });
+});
 
 describe("humanTokens", () => {
   test("below 1000 is an integer", () => {

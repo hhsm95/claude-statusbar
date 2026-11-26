@@ -1,6 +1,7 @@
 import { basename, resolve } from "node:path";
-import { COLORS, FALLBACK_BASES, GLYPHS } from "../constants.ts";
+import { COLORS, DETAIL_LABELS, FALLBACK_BASES, GLYPHS } from "../constants.ts";
 import {
+  type DetailRow,
   fixed,
   type GitRunner,
   name,
@@ -41,7 +42,14 @@ function aheadCount(runGit: GitRunner, dir: string): number {
   return Number.isInteger(count) && count > 0 ? count : 0;
 }
 
-function render({ input, ansi, runGit }: RenderContext): readonly Piece[] | null {
+interface GitState {
+  branch: string;
+  /** Folder name of the work tree, set only in a linked worktree. */
+  worktree?: string;
+  ahead: number;
+}
+
+function readGit({ input, runGit }: RenderContext): GitState | null {
   const dir = input.currentDir;
   if (dir === undefined) return null;
   const root = runGit(dir, ["rev-parse", "--show-toplevel"]);
@@ -58,16 +66,43 @@ function render({ input, ansi, runGit }: RenderContext): readonly Piece[] | null
   // From the root, the main checkout reports the same dir in both; a linked worktree does not.
   const isLinkedWorktree =
     !!gitDir && !!commonDir && resolve(root, gitDir) !== resolve(root, commonDir);
-  const ahead = aheadCount(runGit, root);
+  return {
+    branch,
+    worktree: isLinkedWorktree ? basename(root) : undefined,
+    ahead: aheadCount(runGit, root),
+  };
+}
 
-  const pieces = [name(branch, (s) => ansi.color(COLORS.git, s), "", `${GLYPHS.branch} `)];
-  if (isLinkedWorktree) {
-    pieces.push(name(basename(root), ansi.dim, " ", `${GLYPHS.worktree} `));
+function render(ctx: RenderContext): readonly Piece[] | null {
+  const state = readGit(ctx);
+  if (state === null) return null;
+  const { ansi } = ctx;
+
+  const pieces = [name(state.branch, (s) => ansi.color(COLORS.git, s), "", `${GLYPHS.branch} `)];
+  if (state.worktree !== undefined) {
+    pieces.push(name(state.worktree, ansi.dim, " ", `${GLYPHS.worktree} `));
   }
-  if (ahead > 0) {
-    pieces.push(fixed(`${GLYPHS.ahead}${ahead}`, (s) => ansi.color(COLORS.ahead, s), " "));
+  if (state.ahead > 0) {
+    pieces.push(fixed(`${GLYPHS.ahead}${state.ahead}`, (s) => ansi.color(COLORS.ahead, s), " "));
   }
   return pieces;
 }
 
-export const gitSegment: Segment = { id: "git", render };
+function detail(ctx: RenderContext): readonly DetailRow[] | null {
+  const state = readGit(ctx);
+  if (state === null) return null;
+  const { ansi } = ctx;
+
+  const branch = ansi.color(COLORS.git, state.branch);
+  const ahead =
+    state.ahead > 0
+      ? ` ${GLYPHS.dot} ${ansi.color(COLORS.ahead, `${GLYPHS.ahead}${state.ahead}`)}`
+      : "";
+  const rows: DetailRow[] = [{ label: DETAIL_LABELS.git, value: branch + ahead }];
+  if (state.worktree !== undefined) {
+    rows.push({ label: DETAIL_LABELS.worktree, value: state.worktree });
+  }
+  return rows;
+}
+
+export const gitSegment: Segment = { id: "git", render, detail };

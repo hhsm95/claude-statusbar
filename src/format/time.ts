@@ -1,4 +1,12 @@
-import { MONTHS, MS_PER_SECOND, SECONDS_PER_DAY } from "../constants.ts";
+import {
+  CACHE_TTL_SECONDS,
+  DETAIL_TEXT,
+  DURATION_MAX_UNITS,
+  DURATION_UNITS,
+  MONTHS,
+  MS_PER_SECOND,
+  SECONDS_PER_DAY,
+} from "../constants.ts";
 
 const pad2 = (n: number): string => String(n).padStart(2, "0");
 
@@ -18,4 +26,29 @@ export function formatReset(epochSec: number, now: Date): string {
 /** Local-time start label: `HH:MM` under 24h ago, `DD Mon HH:MM` otherwise. */
 export function formatStart(epochSec: number, now: Date): string {
   return formatLocal(epochSec, nowSec(now) - epochSec >= SECONDS_PER_DAY);
+}
+
+/** Local-time `HH:MM`. */
+export function formatClock(epochSec: number): string {
+  return formatLocal(epochSec, false);
+}
+
+/** The two largest non-zero units of d/h/m/s (`2h 12m`), `0s` at zero; the sign is ignored. */
+export function formatDuration(seconds: number): string {
+  let rest = Math.floor(Math.abs(seconds));
+  const parts: string[] = [];
+  for (const { suffix, seconds: unit } of DURATION_UNITS) {
+    const count = Math.floor(rest / unit);
+    rest -= count * unit;
+    if (count > 0) parts.push(`${count}${suffix}`);
+    if (parts.length === DURATION_MAX_UNITS) break;
+  }
+  return parts.length > 0 ? parts.join(" ") : DETAIL_TEXT.zeroDuration;
+}
+
+/** `5m` / `1h` for the known cache TTLs, else a duration. */
+export function ttlLabel(ttlSec: number): string {
+  if (ttlSec === CACHE_TTL_SECONDS.fiveMinutes) return DETAIL_TEXT.ttlFiveMinutes;
+  if (ttlSec === CACHE_TTL_SECONDS.oneHour) return DETAIL_TEXT.ttlOneHour;
+  return formatDuration(ttlSec);
 }

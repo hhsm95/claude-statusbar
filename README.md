@@ -31,7 +31,7 @@ Every other key of `settings.json` is left untouched. If you already had a diffe
 
 For a non-interactive install (CI, scripts, dotfiles) use `claude-statusbar init --yes`. It is also used automatically when stdin is not a TTY.
 
-Other commands: `claude-statusbar --help` / `-h` and `claude-statusbar --version` / `-v`.
+Other commands: `claude-statusbar details` (see [Details](#details)), `claude-statusbar --help` / `-h` and `claude-statusbar --version` / `-v`.
 
 ## Segments
 
@@ -91,6 +91,16 @@ Settings live in `statusbar.json` inside Claude Code's config directory: `~/.cla
 - Missing ids default to `true`. Unknown keys and non-boolean values are ignored.
 - A missing, corrupt or non-object file never breaks rendering: all segments are enabled.
 - Set `NO_COLOR` to any non-empty value to print plain text with no ANSI escape sequences.
+
+## Details
+
+```bash
+claude-statusbar details
+```
+
+Run it inside Claude Code as `! claude-statusbar details` to see the full, untruncated values behind the status line: model, effort, session, git branch and worktree, quota windows with their reset times, context token counts, cache TTL and the session cost. Segments disabled in `statusbar.json` are skipped, and rows without data are omitted. The header shows how long ago the data was updated.
+
+Each render saves Claude Code's JSON as a snapshot in `<claude dir>/statusbar/snapshots/<session id>.json`, and `details` reads the one for the current session (`CLAUDE_CODE_SESSION_ID`). Snapshots older than 7 days are pruned. `uninstall` leaves `<claude dir>/statusbar/` in place; delete it by hand if you no longer want the snapshots. `details` exits with code 1 outside Claude Code or before the status line has rendered once.
 
 ## Uninstall
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test } from "node:test";
 import { runCli, useTempClaudeDir } from "./cli-helper.ts";
@@ -101,6 +101,26 @@ describe("cli render", () => {
   test("empty NO_COLOR keeps colors", () => {
     const result = runCli([], { input: FULL_INPUT, env: { ...claude.env(), NO_COLOR: "" } });
     assert.ok(result.stdout.includes(ESC));
+  });
+
+  test("saves the stdin JSON as a session snapshot", () => {
+    const input = JSON.stringify({ session_id: "abc-123", model: { display_name: "Opus 5.5" } });
+    const result = runCli([], { input, env: claude.env() });
+    assert.equal(result.status, 0);
+    assert.deepEqual(claude.readJson("statusbar/snapshots/abc-123.json"), JSON.parse(input));
+  });
+
+  test("an unwritable snapshot dir leaves the line and exit code unchanged", () => {
+    const input = JSON.stringify({ session_id: "abc-123", model: { display_name: "Opus 5.5" } });
+    const expected = runCli([], { input, env: { ...claude.env(), NO_COLOR: "1" } });
+    // A file where the directory should be makes the snapshot write fail.
+    rmSync(join(claude.dir(), "statusbar"), { recursive: true, force: true });
+    claude.write("statusbar", "not a directory");
+    const result = runCli([], { input, env: { ...claude.env(), NO_COLOR: "1" } });
+    assert.equal(result.status, 0);
+    assert.equal(result.stdout, expected.stdout);
+    assert.match(result.stdout, /Opus 5\.5/);
+    assert.equal(result.stderr, "");
   });
 });
 
